@@ -57,20 +57,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Set up QEMU
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
-      - name: Install Musl toolchain
-        if: matrix.clib == 'musl'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools
-          sudo ln -s /usr/bin/musl-gcc /usr/bin/x86_64-linux-musl-gcc
-          sudo ln -s /usr/bin/musl-gcc /usr/bin/aarch64-linux-musl-gcc
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -78,6 +64,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           target: ${{ matrix.target }}
+
+      - name: Install Cross
+        run: cargo install cross
 
       - name: Cache Cargo registry
         uses: actions/cache@v4
@@ -98,7 +87,7 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.target }}-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cross build --release --target ${{ matrix.target }}
 
       - name: Package
         shell: bash
