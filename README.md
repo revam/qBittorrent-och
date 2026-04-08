@@ -20,45 +20,33 @@ This project came about due to the lack of an easy way to re-run the on-completi
 
 Download the latest release for your platform from the [GitHub Releases](https://github.com/revam/qBittorrent-och/releases):
 
-#### Linux (x86_64, glibc)
+#### Linux (x86_64)
 ```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-x64-linux-glibc.zip
+curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-linux-x64.zip
 unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
 ```
 
-#### Linux (x86_64, musl)
+#### Linux (ARM64)
 ```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-x64-linux-musl.zip
-unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
-```
-
-#### Linux (ARM64, glibc)
-```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-arm64-linux-glibc.zip
-unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
-```
-
-#### Linux (ARM64, musl)
-```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-arm64-linux-musl.zip
+curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-linux-arm64.zip
 unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
 ```
 
 #### macOS (Apple Silicon)
 ```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-arm64-macos.zip
+curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-macos-arm64.zip
 unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
 ```
 
 #### macOS (Intel)
 ```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-x64-macos.zip
+curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-macos-x64.zip
 unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
 ```
 
 #### Windows
 ```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-x64-windows.zip
+curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-windows-x64.zip
 Expand-Archive -Path qb-och.zip -DestinationPath . && rm qb-och.zip
 ```
 
