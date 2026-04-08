@@ -495,8 +495,8 @@ pub fn build_full_url(
     } else if !url.is_empty() {
         url.push_str("://");
     }
-    if let Some(username) = username {
-        url.push_str(username);
+    if username.is_some_and(|u| !u.is_empty()) {
+        url.push_str(username.unwrap());
         url.push('@');
     }
     url.push_str(host);
