@@ -1,0 +1,13 @@
+/target
+**/*.rs.bak
+
+# IDE
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local config that might contain secrets
+/config.toml

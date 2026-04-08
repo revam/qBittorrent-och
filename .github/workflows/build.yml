@@ -1,0 +1,131 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            arch: x64
+            clib: glibc
+            os_name: linux
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            arch: x64
+            clib: musl
+            os_name: linux
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            arch: arm64
+            clib: glibc
+            os_name: linux
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            arch: arm64
+            clib: musl
+            os_name: linux
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            arch: armv7
+            clib: glibc
+            os_name: linux
+
+          # macOS
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            arch: x64
+            clib: ""
+            os_name: macos
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            arch: arm64
+            clib: ""
+            os_name: macos
+
+          # Windows
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            arch: x64
+            clib: ""
+            os_name: windows
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache Cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-${{ matrix.target }}-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p release
+          BINARY_NAME="qb-och"
+
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            BASENAME="qb-och-${{ matrix.arch }}-${{ matrix.os_name }}"
+            cp "target/${{ matrix.target }}/release/${BINARY_NAME}.exe" "release/${BASENAME}"
+            powershell -Command "Compress-Archive -Path 'release/${BASENAME}' -DestinationPath 'release/${BASENAME}.zip'"
+          elif [[ -n "${{ matrix.clib }}" ]]; then
+            BASENAME="qb-och-${{ matrix.arch }}-${{ matrix.os_name }}-${{ matrix.clib }}"
+            cp "target/${{ matrix.target }}/release/${BINARY_NAME}" "release/${BASENAME}"
+            chmod +x "release/${BASENAME}"
+            cd release && zip "${BASENAME}.zip" "${BASENAME}"
+          else
+            BASENAME="qb-och-${{ matrix.arch }}-${{ matrix.os_name }}"
+            cp "target/${{ matrix.target }}/release/${BINARY_NAME}" "release/${BASENAME}"
+            chmod +x "release/${BASENAME}"
+            cd release && zip "${BASENAME}.zip" "${BASENAME}"
+          fi
+
+      - name: Upload Release Asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifact
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: qb-och-${{ matrix.arch }}-${{ matrix.os_name }}${{ matrix.clib }}
+          path: release/*
