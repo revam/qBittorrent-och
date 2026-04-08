@@ -68,11 +68,19 @@ jobs:
           path: target
           key: ${{ runner.os }}-${{ matrix.target }}-target-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install Cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust Toolchain
+        with:
+          toolchain: stable
+          target: ${{matrix.target}}
+          override: true
 
-      - name: Build
-        run: cross build --release --target ${{ matrix.target }}
+      - uses: actions-rs/cargo@v1
+        name: Build Crate
+        with:
+          use-cross: true
+          command: build
+          args: --target ${{matrix.target}}
 
       - name: Package
         shell: bash
