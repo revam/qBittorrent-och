@@ -20,15 +20,27 @@ This project came about due to the lack of an easy way to re-run the on-completi
 
 Download the latest release for your platform from the [GitHub Releases](https://github.com/revam/qBittorrent-och/releases):
 
-#### Linux (x86_64)
+#### Linux (x86_64) (GNU)
 ```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-linux-x64.zip
+curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-linux-x64-gnu.zip
 unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
 ```
 
-#### Linux (ARM64)
+#### Linux (ARM64) (GNU)
 ```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-linux-arm64.zip
+curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-linux-arm64-gnu.zip
+unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
+```
+
+#### Linux (x86_64) (Musl)
+```bash
+curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-linux-x64-musl.zip
+unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
+```
+
+#### Linux (ARM64) (Musl)
+```bash
+curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-linux-arm64-musl.zip
 unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
 ```
 

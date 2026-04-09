@@ -1,0 +1,13 @@
+FROM rust:alpine
+
+RUN apk update && \
+    apk add --no-cache openssl-dev openssl-libs-static && \
+    rustup target add aarch64-unknown-linux-musl && \
+    mkdir /output
+
+WORKDIR /build
+
+COPY . .
+
+RUN cargo build --release --target aarch64-unknown-linux-musl && \
+    cp /build/target/aarch64-unknown-linux-musl/release/qb-och /output/qb-och

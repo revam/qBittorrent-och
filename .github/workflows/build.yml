@@ -7,42 +7,39 @@ on:
     types: [published]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build:
-    permissions:
-      contents: write
+  build-bare-metal:
+    runs-on: ${{ matrix.os }}
+
+    name: Build ${{ matrix.display_name }} (${{ matrix.arch }})
 
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Linux
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             arch: x64
+            clib: gnu
             os_name: linux
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
-            arch: arm64
-            os_name: linux
+            display_name: Linux
 
-          # macOS
           - target: x86_64-apple-darwin
             os: macos-latest
             arch: x64
+            clib: ""
             os_name: macos
+            display_name: macOS
+
           - target: aarch64-apple-darwin
             os: macos-latest
             arch: arm64
+            clib: ""
             os_name: macos
-
-          # Windows
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            arch: x64
-            os_name: windows
-
-    runs-on: ${{ matrix.os }}
+            display_name: macOS
 
     steps:
       - name: Checkout code
@@ -71,35 +68,25 @@ jobs:
           path: target
           key: ${{ runner.os }}-${{ matrix.target }}-target-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install Cross
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
-        run: cargo install cross --git https://github.com/cross-rs/cross
-
-      - name: Build with Cross
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
-        run: cross build --release --target ${{ matrix.target }}
-
-      - name: Build
-        if: matrix.os != 'ubuntu-latest' || matrix.arch != 'arm64'
+      - name: Build binary
         run: cargo build --release
 
-      - name: Package
+      - name: Package binary
         shell: bash
         run: |
           mkdir -p release
           BINARY_NAME="qb-och"
 
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            BASENAME="qb-och-${{ matrix.os_name }}-${{ matrix.arch }}"
-            cp "target/${{ matrix.target }}/release/${BINARY_NAME}.exe" "release/${BINARY_NAME}.exe"
-            powershell -Command "Compress-Archive -Path 'release/${BINARY_NAME}.exe' -DestinationPath 'release/${BASENAME}.zip'"
-            rm "release/${BINARY_NAME}.exe"
+          if [[ -n "${{ matrix.clib }}" ]]; then
+            BASENAME="qb-och-${{ matrix.os_name }}-${{ matrix.arch }}-${{ matrix.clib }}"
+            cp "target/${{ matrix.target }}/release/${BINARY_NAME}" "release/${BASENAME}"
+            chmod +x "release/${BASENAME}"
+            cd release && zip "${BASENAME}.zip" "${BASENAME}"
           else
             BASENAME="qb-och-${{ matrix.os_name }}-${{ matrix.arch }}"
-            cp "target/${{ matrix.target }}/release/${BINARY_NAME}" "release/${BINARY_NAME}"
-            chmod +x "release/${BINARY_NAME}"
-            (cd release && zip "${BASENAME}.zip" "${BINARY_NAME}")
-            rm "release/${BINARY_NAME}"
+            cp "target/${{ matrix.target }}/release/${BINARY_NAME}" "release/${BASENAME}"
+            chmod +x "release/${BASENAME}"
+            cd release && zip "${BASENAME}.zip" "${BASENAME}"
           fi
 
       - name: Upload Release Asset
@@ -108,7 +95,156 @@ jobs:
         with:
           files: release/*
           draft: false
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+          prerelease: ${{ contains(github.ref, 'dev') }}
+
+      - name: Upload Artifact
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: qb-och-${{ matrix.os_name }}-${{ matrix.arch }}${{ matrix.clib != '' && '-${{ matrix.clib }}' || '' }}
+          path: release/*
+
+  build-docker:
+    runs-on: ubuntu-latest
+
+    name: Build Linux (${{ matrix.arch }}) (${{ matrix.clib }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: Dockerfile.gnu.aarch64
+            platform: arm64
+            arch: arm64
+            clib: gnu
+            os_name: linux
+
+          - target: Dockerfile.musl.x86_64
+            platform: amd64
+            arch: x64
+            clib: musl
+            os_name: linux
+
+          - target: Dockerfile.musl.aarch64
+            platform: arm64
+            arch: arm64
+            clib: musl
+            os_name: linux
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v2
+        if: ${{ matrix.arch == 'arm64' }}
+        name: Set up QEMU
+        with:
+          platforms: arm64
+
+      - uses: docker/setup-buildx-action@v2
+        name: Set up Docker Buildx
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./.github/workflows/${{ matrix.target }}
+          platforms: linux/${{ matrix.platform }}
+          load: true
+          tags: builder-${{ matrix.arch }}-${{ matrix.clib }}:latest
+
+      - name: Run container and extract binary
+        run: |
+          CONTAINER_ID=$(docker create builder-${{ matrix.arch }}-${{ matrix.clib }}:latest)
+          docker cp $CONTAINER_ID:/output/qb-och ./qb-och
+          docker rm $CONTAINER_ID
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p release
+          BASENAME="qb-och-${{ matrix.os_name }}-${{ matrix.arch }}-${{ matrix.clib }}"
+          cp ./qb-och "release/${BASENAME}"
+          chmod +x "release/${BASENAME}"
+          cd release && zip "${BASENAME}.zip" "${BASENAME}"
+
+      - name: Upload Release Asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          draft: false
+          prerelease: ${{ contains(github.ref, 'dev') }}
+
+      - name: Upload Artifact
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: qb-och-${{ matrix.os_name }}-${{ matrix.arch }}-${{ matrix.clib }}
+          path: release/*
+
+  build-windows:
+    runs-on: windows-latest
+
+    name: Build Windows (x64)
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            arch: x64
+            os_name: windows
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache Cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-${{ matrix.target }}-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p release
+          BINARY_NAME="qb-och"
+
+          BASENAME="qb-och-${{ matrix.os_name }}-${{ matrix.arch }}"
+          cp "target/${{ matrix.target }}/release/${BINARY_NAME}.exe" "release/${BINARY_NAME}.exe"
+          powershell -Command "Compress-Archive -Path 'release/${BINARY_NAME}.exe' -DestinationPath 'release/${BASENAME}.zip'"
+          rm "release/${BINARY_NAME}.exe"
+
+      - name: Upload Release Asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          draft: false
+          prerelease: ${{ contains(github.ref, 'dev') }}
 
       - name: Upload Artifact
         if: github.event_name != 'release'
