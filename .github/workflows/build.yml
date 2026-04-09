@@ -79,14 +79,14 @@ jobs:
 
           if [[ -n "${{ matrix.clib }}" ]]; then
             BASENAME="qb-och-${{ matrix.os_name }}-${{ matrix.arch }}-${{ matrix.clib }}"
-            cp "target/${{ matrix.target }}/release/${BINARY_NAME}" "release/${BASENAME}"
-            chmod +x "release/${BASENAME}"
-            cd release && zip "${BASENAME}.zip" "${BASENAME}"
+            cp "target/${{ matrix.target }}/release/${BINARY_NAME}" "release/${BINARY_NAME}"
+            chmod +x "release/${BINARY_NAME}"
+            cd release && zip "${BASENAME}.zip" "${BINARY_NAME}"
           else
             BASENAME="qb-och-${{ matrix.os_name }}-${{ matrix.arch }}"
-            cp "target/${{ matrix.target }}/release/${BINARY_NAME}" "release/${BASENAME}"
-            chmod +x "release/${BASENAME}"
-            cd release && zip "${BASENAME}.zip" "${BASENAME}"
+            cp "target/${{ matrix.target }}/release/${BINARY_NAME}" "release/${BINARY_NAME}"
+            chmod +x "release/${BINARY_NAME}"
+            cd release && zip "${BASENAME}.zip" "${BINARY_NAME}"
           fi
 
       - name: Upload Release Asset
@@ -163,10 +163,12 @@ jobs:
         shell: bash
         run: |
           mkdir -p release
+          BINARY_NAME="qb-och"
+
           BASENAME="qb-och-${{ matrix.os_name }}-${{ matrix.arch }}-${{ matrix.clib }}"
-          cp ./qb-och "release/${BASENAME}"
-          chmod +x "release/${BASENAME}"
-          cd release && zip "${BASENAME}.zip" "${BASENAME}"
+          cp ./qb-och "release/${BINARY_NAME}"
+          chmod +x "release/${BINARY_NAME}"
+          cd release && zip "${BASENAME}.zip" "${BINARY_NAME}"
 
       - name: Upload Release Asset
         if: github.event_name == 'release'
