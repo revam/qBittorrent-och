@@ -18,49 +18,29 @@ This project came about due to the lack of an easy way to re-run the on-completi
 
 ### Download Pre-built Binary
 
-Download the latest release for your platform from the [GitHub Releases](https://github.com/revam/qBittorrent-och/releases):
+Download the latest release for your platform from the [GitHub Releases](https://github.com/revam/qBittorrent-och/releases) or use one of the following commands for a quick install:
 
-#### Linux (x86_64) (GNU)
+#### Linux / macOS
 ```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-linux-x64-gnu.zip
-unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
+curl -sL https://raw.githubusercontent.com/revam/qBittorrent-och/main/scripts/install.sh | bash
 ```
 
-#### Linux (ARM64) (GNU)
+Or with custom install path:
 ```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-linux-arm64-gnu.zip
-unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
-```
-
-#### Linux (x86_64) (Musl)
-```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-linux-x64-musl.zip
-unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
-```
-
-#### Linux (ARM64) (Musl)
-```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-linux-arm64-musl.zip
-unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
-```
-
-#### macOS (Apple Silicon)
-```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-macos-arm64.zip
-unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
-```
-
-#### macOS (Intel)
-```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-macos-x64.zip
-unzip qb-och.zip && rm qb-och.zip && chmod +x qb-och
+curl -sL https://raw.githubusercontent.com/revam/qBittorrent-och/main/scripts/install.sh | bash -s -- --install-path /config
 ```
 
 #### Windows
-```bash
-curl -L -o qb-och.zip https://github.com/revam/qBittorrent-och/releases/latest/download/qb-och-windows-x64.zip
-Expand-Archive -Path qb-och.zip -DestinationPath . && rm qb-och.zip
+```powershell
+irm https://raw.githubusercontent.com/revam/qBittorrent-och/main/scripts/install.ps1 | iex
 ```
+
+Or with custom install path:
+```powershell
+irm https://raw.githubusercontent.com/revam/qBittorrent-och/main/scripts/install.ps1 | iex -InstallPath "D:\Config"
+```
+
+For manual download, see the [GitHub Releases](https://github.com/revam/qBittorrent-och/releases).
 
 ### Build from Source
 
