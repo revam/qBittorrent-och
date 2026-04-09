@@ -1,7 +1,7 @@
 use crate::api::QBitApi;
 use crate::models::{
-    Configuration, Credentials, Preferences, ScriptResult, ScriptStateFilter, SortConfig,
-    SortDirection, SortField, Torrent, TorrentFile,
+    Configuration, Credentials, ScriptResult, ScriptStateFilter, SortConfig, SortDirection,
+    SortField, Torrent, TorrentFile,
 };
 use crate::script_runner::ScriptRunner;
 use anyhow::Result;
@@ -124,7 +124,6 @@ pub struct AppState {
     pub help_scroll: usize,
     pub mode: AppMode,
     pub error_message: Option<String>,
-    pub preferences: Option<Preferences>,
     pub logs: Vec<ScriptResult>,
     pub log_scroll: usize,
     pub qbit_version: Option<String>,
@@ -158,7 +157,6 @@ impl AppState {
             help_scroll: 0,
             mode: AppMode::Normal,
             error_message: None,
-            preferences: None,
             logs: Vec::new(),
             log_scroll: 0,
             qbit_version: None,
@@ -200,7 +198,6 @@ impl AppState {
             help_scroll: 0,
             mode: AppMode::Normal,
             error_message: None,
-            preferences: None,
             logs: Vec::new(),
             log_scroll: 0,
             qbit_version: None,
@@ -378,7 +375,6 @@ impl AppState {
                 self.login_password = password;
                 self.mode = AppMode::Normal;
                 self.error_message = None;
-                self.load_preferences().await?;
                 self.refresh().await?;
                 Ok(())
             }
@@ -445,11 +441,6 @@ impl AppState {
         if self.selected_index >= count {
             self.selected_index = count.saturating_sub(1);
         }
-        Ok(())
-    }
-
-    pub async fn load_preferences(&mut self) -> Result<()> {
-        self.preferences = Some(self.api.get_preferences().await?);
         Ok(())
     }
 
