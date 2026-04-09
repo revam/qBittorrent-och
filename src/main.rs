@@ -101,7 +101,11 @@ enum Commands {
             conflicts_with = "password"
         )]
         password_file: Option<String>,
-        #[arg(long, help = "Test if the connection is usable", default_missing_value = "true")]
+        #[arg(
+            long,
+            help = "Test if the connection is usable",
+            default_missing_value = "true"
+        )]
         test_connection: bool,
     },
 }
@@ -812,11 +816,14 @@ fn try_connect_and_normalize(host: &str, username: &str, password: &str) -> Resu
         Some(username)
     };
     for p in ports_to_try {
-        let url = build_full_url(&protocol, &host_part, Some(p), &pathname, user);
+        let url = build_full_url(&protocol, &host_part, Some(p), &pathname, None);
         let credentials = Credentials::new(url.clone(), username.to_string(), password.to_string());
         let api = api::QBitApi::with_credentials(&credentials);
         let rt = tokio::runtime::Runtime::new().unwrap();
-        eprintln!("Trying {}...", url);
+        eprintln!(
+            "Trying {}...",
+            build_full_url(&protocol, &host_part, Some(p), &pathname, user)
+        );
         match rt.block_on(api.test_connection()) {
             Ok(_) => {
                 return Ok(url);

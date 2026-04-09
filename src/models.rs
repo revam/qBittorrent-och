@@ -513,5 +513,5 @@ pub fn build_full_url(
         }
         url.push_str(pathname);
     }
-    url
+    url.trim_end_matches('/').to_string()
 }
