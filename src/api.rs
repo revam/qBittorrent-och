@@ -1,10 +1,8 @@
 use crate::models::{Credentials, Preferences, PreferencesForUpdate, Torrent, TorrentFile};
 use anyhow::{Context, Result};
-use base64::Engine;
 use qbit_rs::model::Credential;
 use qbit_rs::Qbit;
-use reqwest::Client;
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap};
 
 #[derive(Debug, serde::Deserialize)]
 pub struct SyncData {
@@ -20,9 +18,6 @@ pub struct SyncData {
 #[derive(Clone)]
 pub struct QBitApi {
     client: Option<Qbit>,
-    request_client: Option<Client>,
-    credentials: Credentials,
-    auth_header: Option<String>,
 }
 
 impl QBitApi {
@@ -33,25 +28,8 @@ impl QBitApi {
         } else {
             None
         };
-        let request_client = if client.is_some() {
-            Some(
-                Client::builder()
-                    .timeout(Duration::from_secs(10))
-                    .build()
-                    .expect("Failed to create HTTP client"),
-            )
-        } else {
-            None
-        };
         return Self {
             client,
-            request_client,
-            credentials: Credentials {
-                host: host.to_string(),
-                username: String::new(),
-                password: String::new(),
-            },
-            auth_header: None,
         };
     }
 
@@ -63,45 +41,9 @@ impl QBitApi {
         } else {
             Option::None
         };
-        let request_client = if client.is_some() {
-            Some(
-                Client::builder()
-                    .timeout(Duration::from_secs(10))
-                    .build()
-                    .expect("Failed to create HTTP client"),
-            )
-        } else {
-            None
-        };
-        let d = format!("{}:{}", credentials.username, credentials.password);
-        let encoded = base64::engine::general_purpose::STANDARD.encode(d);
         return Self {
             client,
-            request_client,
-            credentials: credentials.clone(),
-            auth_header: Some(format!("Basic {}", encoded)),
         };
-    }
-
-    async fn get<T: serde::de::DeserializeOwned>(&self, endpoint: &str) -> Result<T> {
-        if self.request_client.is_none() {
-            return Err(anyhow::anyhow!("Client not initialized"));
-        }
-        let url = format!("{}/api/v2/{}", self.credentials.host, endpoint);
-        let client = self.request_client.as_ref().unwrap();
-        let mut request = client.get(&url).header("Referer", &self.credentials.host);
-        if let Some(ref auth) = self.auth_header {
-            request = request.header("Authorization", auth);
-        }
-        let response = request
-            .send()
-            .await
-            .context("Failed to connect to qBittorrent")?;
-        if !response.status().is_success() {
-            anyhow::bail!("API returned error: {}", response.status());
-        }
-        let body: T = response.json().await.context("Failed to parse response")?;
-        Ok(body)
     }
 
     pub async fn login(&self) -> Result<()> {
@@ -134,7 +76,17 @@ impl QBitApi {
     }
 
     pub async fn get_preferences(&self) -> Result<Preferences> {
-        self.get("app/preferences").await
+        if self.client.is_none() {
+            return Result::Err(anyhow::anyhow!("Client not initialized"));
+        }
+        let client = self.client.as_ref().unwrap();
+        let qbit_preference = client.get_preferences().await?;
+        let preferences = Preferences {
+            script_enabled: qbit_preference.autorun_enabled.unwrap_or_default(),
+            script: qbit_preference.autorun_program.unwrap_or_default(),
+            log_dir: qbit_preference.file_log_path.clone(),
+        };
+        Ok(preferences)
     }
 
     pub async fn set_preferences(&self, preferences: &PreferencesForUpdate) -> Result<()> {

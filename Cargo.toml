@@ -22,7 +22,7 @@ crossterm = "0.26"
 chrono = { version = "0.4", features = ["serde"] }
 toml = "0.8"
 base64 = "0.21"
-qbit-rs = "0.5"
+qbit-rs = "0.5.1"
 clap = { version = "4", features = ["derive"] }
 dirs = "5"
 url = "2"

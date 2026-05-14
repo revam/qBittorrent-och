@@ -129,13 +129,10 @@ impl From<qbit_rs::model::TorrentContent> for TorrentFile {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Preferences {
     /// Script enabled
-    #[serde(rename = "autorun_enabled")]
     pub script_enabled: bool,
     /// Script to run
-    #[serde(rename = "autorun_program")]
     pub script: String,
     /// Log directory
-    #[serde(rename = "file_log_path")]
     pub log_dir: Option<String>,
 }
 
